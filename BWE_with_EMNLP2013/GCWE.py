@@ -36,7 +36,24 @@ class GCWE:
 		self.Wg2 = theano.shared(name="Wg2", value=Wg2.astype(theano.config.floatX))
 		self.bg2 = theano.shared(name="bg2", value=bg2.astype(theano.config.floatX))
 
-		__build_GCWE__()
+	def forward(self):
 
-	def __build_GCWE__():
-		pass
+		W1,b1,W2,b2,Wg1,bg1,Wg2,bg2 = \
+		self.W1, self.b1, self.W2, self.b2,\
+		self.Wg1, self.bg1, self.Wg2, self.bg2
+
+		input_layer = T.catenate(X[0].dot(word_emb),X[1].dot(word_emb),\
+					X[2].dot(word_emb),X[3].dot(word_emb),\
+					X[4].dot(word_emb),axis=0)
+
+		hidden_layer = T.tanh(input_layer.dot(W1)+b1)
+		score_local = hidden_layer.dot(W2)+b2
+
+		global_input_layer = T.catenate(X[4], X_g, axis=0)
+		global_hidden_layer = T.tanh(global_input_layer.dot(Wg1)+bg1)
+		score_global = global_hidden_layer.dot(Wg2)+b2g
+		
+		score = score_local + score_global
+
+		self.prediction = theano.function([X,word_emb,X_g], score)
+		
