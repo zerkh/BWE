@@ -4,6 +4,10 @@ import numpy as np
 from config import GCWEConfiger
 
 class GCWE:
+	'''
+	reference Huang et al. 2012 Global-context word representation
+	'''
+
 	def __init__(self, configer = None):
 		self.window_size = configer.window_size
 		self.hidden_dim = configer.hidden_dim
@@ -54,7 +58,7 @@ class GCWE:
 
 		return score[0][0]
 
-	def target_function(self, x_neg, x_local, x, x_g):
+	def target_function(self, x_neg, word_emb, x_local, x, x_g):
 		score = self.forward(word_emb, x_local, x, x_g)
 		score_neg = self.forward(word_emb, x_local, x_neg, x_g)
 			
@@ -67,7 +71,7 @@ class GCWE:
 		X_g = T.dvector(name="X_g")
 		
 		[o_error], updates = theano.scan(self.target_function, sequences=X_neg,\
-										non_sequences=[X_local, X, X_g])
+										non_sequences=[word_emb, X_local, X, X_g])
 		
 		error_sum = T.sum(o_error)
 		self.c_error = theano.function([X_local, X, X_neg, X_g], error_sum)
@@ -83,7 +87,8 @@ class GCWE:
 		d_bg2 = T.grad(error_sum, self.bg2)
 		
 		self.train_step = theano.function([X_local, X, X_neg, X_g], [], \
-										updates=[(self.W1-d_W1),
+										updates=[(word_emb-d_word_emb)
+												(self.W1-d_W1),
 												(self.b1-d_b1),
 												(self.W2-d_W2),
 												(self.b2-d_b2),
